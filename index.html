@@ -559,6 +559,15 @@ function updateCheckpointsTitle(spacing) {
   title.textContent = `📍 Puntos de Control - Cada ${spacing}m`;
 }
 
+/* ========== CALCULAR TIEMPO DE CAMINATA REALISTA ========== */
+function calculateWalkingTime(distanceInMeters) {
+  // Velocidad promedio de caminata urbana: 4.5 km/h (1.25 m/s)
+  // Considerando paradas en semáforos, cruces, etc.
+  const walkingSpeed = 1.25; // metros por segundo
+  const timeInSeconds = distanceInMeters / walkingSpeed;
+  return Math.round(timeInSeconds / 60); // convertir a minutos
+}
+
 /* ========== PLANIFICAR RUTA PARA CAMINAR ========== */
 async function planRoute(){
   const startInput = document.getElementById('startLocation');
@@ -597,19 +606,22 @@ async function planRoute(){
     // Actualizar el título con el spacing correcto
     updateCheckpointsTitle(spacing);
     
-    const checkpoints = buildCheckpoints(coords,route.distance,route.duration,spacing,departureTime);
+    // Calcular tiempo de caminata realista basado en la distancia
+    const walkingTimeMinutes = calculateWalkingTime(route.distance);
+    const walkingDurationSeconds = walkingTimeMinutes * 60;
+    
+    const checkpoints = buildCheckpoints(coords, route.distance, walkingDurationSeconds, spacing, departureTime);
     checkpoints[0].name = startInput.value;
     checkpoints[checkpoints.length-1].name = endInput.value;
 
     checkpointsData = checkpoints;
-    currentRoute = {coords,distance:route.distance,duration:route.duration};
+    currentRoute = {coords, distance: route.distance, duration: walkingDurationSeconds};
 
     drawWalkingRoute(checkpoints);
     await renderCheckpointsList(checkpoints);
     
-    const walkingTime = Math.round(route.duration/60);
     const distance = (route.distance/1000).toFixed(2);
-    showSuccess(`Recorrido Urbano: ${distance} km, ${walkingTime} minutos a pie`);
+    showSuccess(`Recorrido Urbano: ${distance} km, ${walkingTimeMinutes} minutos andando 🚶‍♂️`);
   }catch(e){
     showError('Error: '+e.message);
   }
@@ -1068,3 +1080,5 @@ document.addEventListener('DOMContentLoaded',()=>{
 </script>
 </body>
 </html>
+
+/* 
